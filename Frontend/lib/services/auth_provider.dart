@@ -20,7 +20,8 @@ class AuthProvider extends ChangeNotifier {
       final token = await ApiService.getToken();
       if (token != null) {
         final data = await ApiService.getMe();
-        _user = User.fromJson(data['data']);
+        final userData = data['data'] ?? data['user'] ?? data;
+        _user = User.fromJson(userData);
       }
     } catch (e) {
       await ApiService.clearToken();
@@ -36,7 +37,9 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final data = await ApiService.login(email, password);
-      _user = User.fromJson(data['data']);
+      final userData = data['data'] ?? data['user'] ?? data;
+      _user = User.fromJson(userData);
+
       _isLoading = false;
       notifyListeners();
       return true;
