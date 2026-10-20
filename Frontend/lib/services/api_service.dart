@@ -44,11 +44,18 @@ class ApiService {
   }
 
   static Future<dynamic> _handleResponse(http.Response response) async {
-    final body = jsonDecode(response.body);
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return body;
-    } else {
-      throw Exception(body['message'] ?? 'Something went wrong');
+    try {
+      final body = jsonDecode(response.body);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return body;
+      } else {
+        throw Exception(body['message'] ?? 'Something went wrong');
+      }
+    } catch (e) {
+      if (e is FormatException) {
+        throw Exception('Server returned an invalid response. Please try again.');
+      }
+      rethrow;
     }
   }
 
@@ -60,9 +67,15 @@ class ApiService {
       body: jsonEncode({'email': email, 'password': password}),
     );
     final data = await _handleResponse(res);
-    if (data['token'] != null) {
-      await saveToken(data['token']);
-      await saveUser(data['data']);
+
+    final token = data['token'];
+    final userData = data['data'] ?? data['user'];
+
+    if (token != null) {
+      await saveToken(token);
+      if (userData != null) {
+        await saveUser(userData);
+      }
     }
     return data;
   }
